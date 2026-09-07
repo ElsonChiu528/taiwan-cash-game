@@ -85,7 +85,7 @@ function reset(){
   document.getElementById("message").textContent="";
   updateUI();
 }
-function jump(){if(game&&game.running&&game.p.onGround){game.p.vy=-12;game.p.onGround=false}}
+function jump(){if(game&&game.running&&game.p.onGround){game.p.vy=-13;game.p.onGround=false}}
 function fire(){
   if(!game||!game.running||game.cool>0)return;
   const c=cards[game.card];game.cool=c.cool;game.money+=5;
@@ -105,7 +105,8 @@ function end(win){
 }
 function spawnObstacle(){
   const types=["cone","barrier","sign"],type=types[Math.floor(Math.random()*3)];
-  const h=type==="barrier"?30:type==="sign"?52:35;
+  // All obstacles stay low enough to clear with a normal jump.
+  const h=type==="barrier"?24:type==="sign"?34:28;
   game.obstacles.push({x:W+30,y:ground-63-h,w:type==="barrier"?65:type==="sign"?42:36,h,type});
 }
 function update(){
@@ -114,16 +115,17 @@ function update(){
   game.dist+=.72*c.speed;game.scroll+=1.75*c.speed;
   const p=game.p;
   if(p.inv>0)p.inv--;
-  p.vy+=.72;p.y+=p.vy;
+  p.vy+=.62;p.y+=p.vy;
   if(p.y>=ground-76){p.y=ground-76;p.vy=0;p.onGround=true}
   game.cool=Math.max(0,game.cool-1);
-  game.spawn--;if(game.spawn<=0){spawnObstacle();game.spawn=75+Math.random()*55}
+  game.spawn--;if(game.spawn<=0){spawnObstacle();game.spawn=95+Math.random()*65}
   for(const o of game.obstacles)o.x-=2.1*c.speed;
   for(const s of game.shots)s.x+=s.vx;
   for(const s of game.enemyShots)s.x-=s.vx;
 
+  // Forgiving collision box: only the player's lower body needs to overlap.
   for(const o of game.obstacles)
-    if(Math.abs(o.x-p.x)<42&&p.y+62>o.y&&p.y<o.y+o.h)hit();
+    if(Math.abs(o.x-p.x)<36 && p.y+68>o.y+5 && p.y+18<o.y+o.h)hit();
   game.obstacles=game.obstacles.filter(o=>o.x>-100);
   game.shots=game.shots.filter(s=>s.x<W+100);
 
