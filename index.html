@@ -18,11 +18,14 @@ body{touch-action:none;font-family:-apple-system,BlinkMacSystemFont,"PingFang TC
 #bossName{font-size:12px;font-weight:900}.bar{height:8px;background:#431414;border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;width:100%;background:#ff5b35}
 #hint{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.7);padding:12px 16px;border-radius:14px;text-align:center;font-size:13px;line-height:1.6;transition:opacity .3s}
 #message{position:absolute;top:25%;left:50%;transform:translateX(-50%);font-size:22px;font-weight:900;white-space:nowrap;text-shadow:0 2px 4px #000}
-#controls{position:absolute;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:flex-end;padding:0 10px}
+#controls{position:absolute;left:0;right:0;bottom:max(10px,env(safe-area-inset-bottom));display:flex;align-items:flex-end;padding:0 10px}
+#moveGroup{margin-right:8px}
+#attackGroup{margin-right:auto}
+#cardGroup{margin-left:auto}
 .group{display:flex;gap:7px;pointer-events:auto}
 button{font-family:inherit;touch-action:manipulation}
 .btn{width:62px;height:62px;border:1px solid rgba(255,255,255,.4);border-radius:50%;background:rgba(18,22,28,.72);color:#fff;font-size:24px;font-weight:900}
-.card{width:55px;height:55px;border-radius:13px;font-size:11px}.card b{display:block;font-size:15px}
+.card{width:64px;height:58px;border-radius:13px;font-size:11px}.card b{display:block;font-size:15px}
 #restart{display:none;position:absolute;left:50%;top:62%;transform:translate(-50%,-50%);pointer-events:auto;border:0;border-radius:13px;padding:12px 21px;background:#fff;color:#111;font-size:17px;font-weight:900}
 </style>
 </head>
@@ -34,16 +37,16 @@ button{font-family:inherit;touch-action:manipulation}
     <div class="panel" id="stats">❤️ <span id="hp">5</span>　💰 <span id="money">0</span><br>🃏 <span id="card">普卡</span>　📍 <span id="distance">0</span>m</div>
   </div>
   <div id="bossbar"><div id="bossName">霸王炘・最終攔截</div><div class="bar"><i id="bossHp"></i></div></div>
-  <div id="hint">自動向前奔跑<br>↟ 跳躍　💴 出錢攻擊<br>下方四張卡可切換鈔能力</div>
+  <div id="hint">自動向前奔跑<br>↟ 跳躍　💴 出錢攻擊<br>右側三張卡可切換鈔能力</div>
   <div id="message"></div>
   <button id="restart">重新開始</button>
   <div id="controls">
-    <div class="group"><button class="btn" id="jump">↟</button><button class="btn" id="attack">💴</button></div>
-    <div class="group">
+    <div class="group" id="moveGroup"><button class="btn" id="jump">↟</button></div>
+    <div class="group" id="attackGroup"><button class="btn" id="attack">💴</button></div>
+    <div class="group" id="cardGroup">
       <button class="btn card" data-card="0"><b>普</b>普卡</button>
       <button class="btn card" data-card="1"><b>金</b>金卡</button>
-      <button class="btn card" data-card="2"><b>白</b>白金卡</button>
-      <button class="btn card" data-card="3"><b>黑</b>黑卡</button>
+      <button class="btn card" data-card="2"><b>黑</b>黑卡</button>
     </div>
   </div>
 </div>
@@ -64,8 +67,7 @@ addEventListener("resize",resize);
 
 const cards=[
  {name:"普卡",power:1,cool:18,speed:1},
- {name:"金卡",power:1.7,cool:14,speed:1.06},
- {name:"白金卡",power:2.5,cool:11,speed:1.12},
+ {name:"金卡",power:1.8,cool:13,speed:1.06},
  {name:"黑卡",power:4,cool:8,speed:1.2}
 ];
 
@@ -91,7 +93,7 @@ function fire(){
   const c=cards[game.card];game.cool=c.cool;game.money+=5;
   game.shots.push({x:game.p.x+28,y:game.p.y+18,vx:8*c.speed,dmg:c.power});
 }
-function setCard(i){if(game)game.card=Math.max(0,Math.min(3,i));updateUI()}
+function setCard(i){if(game)game.card=Math.max(0,Math.min(2,i));updateUI()}
 function hit(){
   if(game.p.inv>0)return;
   game.hp--;game.p.inv=55;game.shake=5;
@@ -200,6 +202,45 @@ function draw(){
     const h=70+(i%4)*35;
     ctx.fillStyle=i%2?"#9ca7aa":"#89969c";ctx.fillRect(x,ground-65-h,110,h+65);
   }
+  // Taipei Xinyi skyline, trees and landmarks — lightweight but visually rich.
+  for(let i=0;i<12;i++){
+    const x=((i*150-game.scroll*.22)%1900)-100;
+    const h=90+(i%5)*35;
+    ctx.fillStyle=i%3===0?"#7895ad":"#8aa4b8";
+    ctx.fillRect(x,ground-235-h,h*.55,h+235);
+    ctx.fillStyle="rgba(220,240,250,.55)";
+    for(let yy=ground-215-h;yy<ground-90;yy+=24)ctx.fillRect(x+10,yy,30,9);
+  }
+  // Trees
+  for(let i=0;i<12;i++){
+    const x=((i*165-game.scroll*.58)%1900)-80;
+    const y=ground-92;
+    ctx.fillStyle="#5b9b4a";ctx.beginPath();ctx.arc(x,y-35,31,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#4b8d43";ctx.beginPath();ctx.arc(x+24,y-25,25,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle="#70533d";ctx.fillRect(x+4,y-12,10,30);
+  }
+  // Xinyi landmarks / shop signs
+  const signs=[
+    ["A11","#e53935"],["新光三越","#d93636"],["ATT","#3e69bd"],
+    ["CHANEL","#222"],["Breeze","#c63e3e"]
+  ];
+  signs.forEach((item,i)=>{
+    const x=((i*360-game.scroll*.52)%1900)-160;
+    ctx.fillStyle=item[1];ctx.fillRect(x,ground-205,170,62);
+    ctx.fillStyle="#fff";ctx.font="900 24px sans-serif";ctx.textAlign="center";ctx.fillText(item[0],x+85,ground-165);
+  });
+  // Taipei 101 — always visible in the distant skyline.
+  const t= W*.76;
+  ctx.fillStyle="#4f829c";ctx.fillRect(t,ground-350,54,350);
+  for(let k=0;k<6;k++){ctx.fillStyle="#5e96ad";ctx.fillRect(t-16-k,ground-330+k*52,86+k*2,30)}
+  ctx.fillStyle="#fff";ctx.font="900 18px sans-serif";ctx.fillText("101",t+27,ground-220);
+  // Bus and taxi
+  ctx.fillStyle="#e8e8e8";ctx.fillRect(W*.62,ground-70,150,48);
+  ctx.fillStyle="#39a9d6";ctx.fillRect(W*.62,ground-70,150,10);
+  ctx.fillStyle="#222";ctx.fillRect(W*.65,ground-58,28,22);ctx.fillRect(W*.83,ground-58,28,22);
+  ctx.fillStyle="#f2c62f";ctx.fillRect(W*.45,ground-52,92,30);
+  ctx.fillStyle="#222";ctx.beginPath();ctx.arc(W*.47,ground-22,9,0,Math.PI*2);ctx.arc(W*.52,ground-22,9,0,Math.PI*2);ctx.fill();
+
   // Shops
   for(let i=0;i<9;i++){
     const x=((i*180-game.scroll*.55)%1620)-180;
@@ -249,6 +290,17 @@ function draw(){
     for(let k=0;k<5;k++){ctx.fillStyle="#6f8998";ctx.fillRect(x+10-k*2,ground-315+k*48,85+k*4,28)}
     ctx.fillStyle="#fff";ctx.font="900 20px sans-serif";ctx.textAlign="center";ctx.fillText("101",x+52,ground-220);
   }
+  // Floating cash pickups
+  for(let i=0;i<6;i++){
+    const x=((i*240-game.scroll*.95)%(W+300)+W+300)%(W+300)-80;
+    const y=ground-115-(i%2)*22;
+    ctx.save();ctx.translate(x,y);ctx.rotate(-.08);
+    ctx.fillStyle="#d9efbd";ctx.fillRect(-18,-10,36,20);
+    ctx.strokeStyle="#4b9b59";ctx.strokeRect(-18,-10,36,20);
+    ctx.fillStyle="#4b9b59";ctx.font="900 15px sans-serif";ctx.textAlign="center";ctx.fillText("$",0,5);
+    ctx.restore();
+  }
+
   // Obstacles
   for(const o of game.obstacles){
     ctx.fillStyle=o.type==="cone"?"#f47b20":o.type==="barrier"?"#e84b3c":"#30343a";
