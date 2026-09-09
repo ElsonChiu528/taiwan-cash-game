@@ -11,7 +11,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC","Microsoft Jhen
 #game{position:fixed;inset:0;overflow:hidden;touch-action:none}
 #world{position:absolute;left:50%;top:50%;width:min(100vw,177.78vh);height:min(56.25vw,100vh);transform:translate(-50%,-50%);overflow:hidden}
 #bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;user-select:none}
-.char{position:absolute;z-index:5;pointer-events:none;user-select:none;filter:drop-shadow(0 7px 5px #0007);transition:left .16s ease-out,transform .16s ease-out}
+.char{position:absolute;z-index:5;pointer-events:none;user-select:none;filter:drop-shadow(0 7px 5px #0007);transition:transform .12s ease-out;will-change:left,transform}
 #hero{left:18.5%;bottom:29%;width:14%;}
 #boss{left:70%;bottom:27%;width:18%;}
 #fx{position:absolute;inset:0;z-index:8;pointer-events:none}
@@ -75,16 +75,35 @@ const msg=document.getElementById('msg');
 const hpFill=document.getElementById('hpFill');
 const bossFill=document.getElementById('bossFill');
 const fx=document.getElementById('fx');
-let x=18.5, hp=100, card=0, jumping=false;
+let x=18.5, hp=100, card=0, jumping=false, moveDir=0, lastT=0, rafId=0;
 
 function say(t){msg.textContent=t;msg.classList.add('show');clearTimeout(window.tt);window.tt=setTimeout(()=>msg.classList.remove('show'),750)}
-function render(){hero.style.left=x+'%';status.textContent='第一關・信義路　👑 霸王炘　位置 '+Math.round(x);hpFill.style.width=hp+'%';bossFill.style.width=hp+'%'}
-function move(d){
-  x=Math.max(5,Math.min(48,x+d*3));
-  hero.style.transform=d<0?'scaleX(-1)':'scaleX(1)';
-  render();
-  say(d<0?'◀ 主角向左':'主角向右 ▶');
+function render(){
+  hero.style.left=x+'%';
+  status.textContent='第一關・信義路　👑 霸王炘　位置 '+Math.round(x);
+  hpFill.style.width=hp+'%';
+  bossFill.style.width=hp+'%';
 }
+function step(t){
+  if(!lastT) lastT=t;
+  const dt=Math.min(32,t-lastT);
+  lastT=t;
+  if(moveDir!==0){
+    x += moveDir * dt * 0.022;   // 約 22% / 秒，連續平滑移動
+    x=Math.max(5,Math.min(58,x));
+    hero.style.transform=moveDir<0?'scaleX(-1)':'scaleX(1)';
+    render();
+  }
+  rafId=requestAnimationFrame(step);
+}
+function startMove(d){
+  moveDir=d;
+  hero.style.transform=d<0?'scaleX(-1)':'scaleX(1)';
+}
+function stopMove(){
+  moveDir=0;
+}
+
 function jump(){
  if(jumping)return;
  jumping=true;
@@ -110,14 +129,39 @@ function bind(id,fn){
  const b=document.getElementById(id);
  b.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();fn()},{passive:false});
 }
-bind('L',()=>move(-1));bind('R',()=>move(1));bind('jump',jump);bind('attack',attack);
+function bindHold(id,dir){
+ const b=document.getElementById(id);
+ const down=e=>{
+   e.preventDefault();e.stopPropagation();
+   try{b.setPointerCapture(e.pointerId)}catch(_){}
+   startMove(dir);
+ };
+ const up=e=>{
+   e.preventDefault();e.stopPropagation();
+   stopMove();
+ };
+ b.addEventListener('pointerdown',down,{passive:false});
+ b.addEventListener('pointerup',up,{passive:false});
+ b.addEventListener('pointercancel',up,{passive:false});
+ b.addEventListener('lostpointercapture',()=>stopMove());
+}
+bindHold('L',-1);
+bindHold('R',1);
+bind('jump',jump);
+bind('attack',attack);
 bind('cards',()=>{card=(card+1)%4;say(['💵 普卡','🪙 金卡','⚡ 白金卡','🚀 黑卡'][card])});
 window.addEventListener('keydown',e=>{
- if(e.key==='ArrowLeft')move(-1);else if(e.key==='ArrowRight')move(1);
- else if(e.key==='ArrowUp'||e.key===' ')jump();else if(e.key.toLowerCase()==='z')attack();
+  if(e.key==='ArrowLeft') startMove(-1);
+  else if(e.key==='ArrowRight') startMove(1);
+  else if(e.key==='ArrowUp'||e.key===' ') jump();
+  else if(e.key.toLowerCase()==='z') attack();
+});
+window.addEventListener('keyup',e=>{
+  if(e.key==='ArrowLeft'||e.key==='ArrowRight') stopMove();
 });
 render();
-say('新版：主角與霸王炘已獨立，可移動、跳躍、攻擊');
+rafId=requestAnimationFrame(step);
+say('按住 ◀ ▶ 就會連續平滑移動');
 </script>
 </body>
 </html>
